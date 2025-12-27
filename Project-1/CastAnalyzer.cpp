@@ -26,6 +26,7 @@ class CastAnalyzer
 {
 private:
     std::map<std::string, FileAnalysis> fileResults;
+
     std::vector<std::string> castTypes = {
         "static_cast",
         "dynamic_cast",
@@ -41,6 +42,7 @@ private:
     std::string getContext(const std::vector<std::string> &lines, size_t castLine, size_t contextSize = 2)
     {
         std::string context;
+
         size_t start = (castLine > contextSize) ? castLine - contextSize : 0;
         size_t end = std::min(lines.size(), castLine + contextSize + 1);
 
@@ -48,12 +50,14 @@ private:
         {
             context += std::to_string(i + 1) + ": " + lines[i] + "\n";
         }
+
         return context;
     }
 
     void analyzeFile(const std::string &filepath)
     {
         std::ifstream file(filepath);
+
         if (!file.is_open())
         {
             std::cerr << "Failed to open file: " << filepath << std::endl;
@@ -68,18 +72,28 @@ private:
         }
 
         FileAnalysis analysis;
+
         for (size_t i = 0; i < lines.size(); ++i)
         {
             for (const auto &castType : castTypes)
             {
+                /*
+                    Matches
+                    static_cast<int>(
+                    reinterpret_cast<MyType*>(
+                    const_cast< Foo >(
+                */
                 std::regex castPattern(castType + "\\s*<.*?>\\s*\\(");
+
                 if (std::regex_search(lines[i], castPattern))
                 {
                     CastOccurrence occurrence;
+
                     occurrence.castType = castType;
                     occurrence.line = lines[i];
                     occurrence.lineNumber = i + 1;
                     occurrence.context = getContext(lines, i);
+
                     analysis.occurrences.push_back(occurrence);
                 }
             }
